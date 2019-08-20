@@ -1,87 +1,57 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
+import 'dart:math';
 
-void main() => runApp(new MyApp());
+void main() => runApp(MaterialApp(
+  debugShowCheckedModeBanner: false,
+  home: HomePage(),
+));
 
-class MyApp extends StatelessWidget {
+class HomePage extends StatefulWidget {
   @override
-  Widget build(BuildContext context) {
-    return new MaterialApp(
-      theme: new ThemeData(),
-      home: FormPage(),
-    );
-  }
+  _HomePageState createState() => new _HomePageState();
 }
 
-class FormPage extends StatefulWidget {
-  @override
-  _FormPageState createState() => _FormPageState();
-}
+class _HomePageState extends State<HomePage> {
 
-class _FormPageState extends State<FormPage> {
+  var list;
+  var random;
 
-  final scaffoldKey = new GlobalKey<ScaffoldState>();
-  final formKey = new GlobalKey<FormState>();
-
-  String _email;
-  String _password;
+  var refreshKey = GlobalKey<RefreshIndicatorState>();
 
   @override
   void initState() {
     super.initState();
-  }
-  
-  @override
-  void dispose() {
-    super.dispose();
+    random = Random();
+    refreshList();
   }
 
-  void _submit(){
-    final form = formKey.currentState;
-    if(form.validate()){
-      form.save();
-      performLogin();
-    }
-  }
+  Future<Null> refreshList() async{
 
-  void performLogin(){
-    final snackbar = new SnackBar(
-      content: new Text("Email: $_email, Password: $_password ")
-    );
-    scaffoldKey.currentState.showSnackBar(snackbar);
+    refreshKey.currentState?.show(atTop: false);
+    await Future.delayed(Duration(seconds: 2));
+
+    setState(() {
+      list = List.generate(random.nextInt(10), (i) => "Item $i");
+    });
+    return null;
   }
 
   @override
   Widget build(BuildContext context) {
-    return new Scaffold(
-      key: scaffoldKey,
-      appBar: new AppBar(
-        title: new Text("Form Page"),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Pull to Refresh"),
       ),
-      body: new Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: new Form(
-          key: formKey,
-          child: new Column(
-            children: <Widget>[
-              new TextFormField(
-                decoration: new InputDecoration(labelText: "Email"),
-                validator: (val)=> !(val).contains('@')?'Invalid Email': null,
-                onSaved: (val) => _email = val,
-              ),
-              new Padding(padding: const EdgeInsets.only(top: 20.0)),
-              new TextFormField(
-                decoration: new InputDecoration(labelText: "Password"),
-                validator: (val)=> val.length<6?'Password too short': null,
-                onSaved: (val) => _password = val,
-                obscureText: true,
-              ),
-              new RaisedButton(
-                child: new Text("Login"),
-                onPressed: _submit,
-              ),
-            ],
+      body: RefreshIndicator(
+        key: refreshKey,
+        child: ListView.builder(
+          itemCount: list?.length,
+          itemBuilder: (context, i) => ListTile(
+            title: Text(list[i]),
           ),
         ),
+        onRefresh: refreshList,
       ),
     );
   }
